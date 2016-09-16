@@ -31,8 +31,10 @@ class BlogHandler(webapp2.RequestHandler):
 
     def get_user_by_name(self, username):
         """ Get a user object from the db, based on their username """
-        user = db.GqlQuery("SELECT * FROM User WHERE username = :user", user=username)
+        print("SELECT * FROM User WHERE username='{}'".format(username))
+        user = db.GqlQuery("SELECT * FROM User WHERE username='{}'".format(username))
         if user:
+            print(user)
             return user.get()
 
     def login_user(self, user):
