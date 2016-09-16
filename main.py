@@ -13,6 +13,9 @@ class BlogHandler(webapp2.RequestHandler):
         """ Get all posts ordered by creation date (descending) """
         query = Post.all().order('-created')
         return query.fetch(limit=limit, offset=offset)
+    
+    def get_author(self, post):
+        return User.get_by_id(int(post.author)).username
 
     def get_posts_by_user(self, user, limit, offset):
         """
@@ -20,12 +23,15 @@ class BlogHandler(webapp2.RequestHandler):
             The user parameter will be a User object.
         """
 
-        # TODO - filter the query so that only posts by the given user
-        return None
+        posts = db.GqlQuery("SELECT * FROM Post WHERE author={} ORDER BY created DESC LIMIT ".format(user.key().id()) +
+                        "{} OFFSET {}".format(limit, offset))
+        post_list = [post for post in posts]
+        
+        return post_list
 
     def get_user_by_name(self, username):
         """ Get a user object from the db, based on their username """
-        user = db.GqlQuery("SELECT * FROM User WHERE username = '%s'" % username)
+        user = db.GqlQuery("SELECT * FROM User WHERE username = :user", user=username)
         if user:
             return user.get()
 
@@ -92,6 +98,8 @@ class BlogIndexHandler(BlogHandler):
             posts = self.get_posts_by_user(user, self.page_size, offset)
         else:
             posts = self.get_posts(self.page_size, offset)
+        
+        users = [self.get_author(post) for post in posts]
 
         # determine next/prev page numbers for navigation links
         if page > 1:
@@ -108,6 +116,7 @@ class BlogIndexHandler(BlogHandler):
         t = jinja_env.get_template("blog.html")
         response = t.render(
                     posts=posts,
+                    users=users,
                     page=page,
                     page_size=self.page_size,
                     prev_page=prev_page,
@@ -137,7 +146,7 @@ class NewPostHandler(BlogHandler):
             post = Post(
                 title=title,
                 body=body,
-                author=self.user)
+                author=self.user.key().id())
             post.put()
 
             # get the id of the new post, so we can render the post's page (via the permalink)
@@ -155,7 +164,8 @@ class ViewPostHandler(BlogHandler):
         post = Post.get_by_id(int(id))
         if post:
             t = jinja_env.get_template("post.html")
-            response = t.render(post=post)
+            user = User.get_by_id(int(post.author))
+            response = t.render(post=post, user=user)
         else:
             error = "there is no post with id %s" % id
             t = jinja_env.get_template("404.html")
@@ -259,7 +269,8 @@ class SignupHandler(BlogHandler):
 class LoginHandler(BlogHandler):
 
     # TODO - The login code here is mostly set up for you, but there isn't a template to log in
-
+    # DONE
+    
     def render_login_form(self, error=""):
         """ Render the login form with or without an error, based on parameters """
         t = jinja_env.get_template("login.html")
@@ -275,7 +286,6 @@ class LoginHandler(BlogHandler):
 
         # get the user from the database
         user = self.get_user_by_name(submitted_username)
-
         if not user:
             self.render_login_form(error="Invalid username")
         elif hashutils.valid_pw(submitted_username, submitted_password, user.pw_hash):

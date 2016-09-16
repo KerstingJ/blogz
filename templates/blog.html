@@ -4,12 +4,12 @@
 
 <h1>blog posts!</h1>
 
-{% for post in posts %}
+{% for i in range(posts|length) %}
 
-<h2><a href="/blog/{{ post.key().id() }}">{{ post.title }}</a></h2>
-<p>{{ post.body }}</p>
+<h2><a href="/blog/{{ posts[i].key().id() }}">{{ posts[i].title }}</a></h2>
+<p>{{ posts[i].body }}</p>
 <!-- TODO add author w/ link to author's blog page -->
-
+<span style="font-size: 10px; margin-top: 4px;">by <a href="/blog/{{ users[i] }}">{{ users[i] }}</a></span>
 {% endfor %}
 
 {% if username %}
