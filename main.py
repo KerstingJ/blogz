@@ -6,6 +6,7 @@ import hashutils
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape = True)
 
+
 class BlogHandler(webapp2.RequestHandler):
     """ Utility class for gathering various useful methods that are used by most request handlers """
 
@@ -67,6 +68,7 @@ class BlogHandler(webapp2.RequestHandler):
 
         if not self.user and self.request.path in auth_paths:
             self.redirect('/login')
+
 
 class IndexHandler(BlogHandler):
 
@@ -268,11 +270,11 @@ class SignupHandler(BlogHandler):
         else:
             self.redirect('/blog/newpost')
 
+
 class LoginHandler(BlogHandler):
 
     # TODO - The login code here is mostly set up for you, but there isn't a template to log in
-    # DONE
-    
+
     def render_login_form(self, error=""):
         """ Render the login form with or without an error, based on parameters """
         t = jinja_env.get_template("login.html")
@@ -295,6 +297,7 @@ class LoginHandler(BlogHandler):
             self.redirect('/blog/newpost')
         else:
             self.render_login_form(error="Invalid password")
+
 
 class LogoutHandler(BlogHandler):
 
